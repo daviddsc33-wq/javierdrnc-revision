@@ -628,9 +628,25 @@ function addTips(pr) {
 
 /* ================= Ensamblaje ================= */
 
+// Construcción por pasos: cada `yield` es un punto donde la web puede ceder un fotograma
+// (buildMavicHQAsync) para que el scroll no se quede pillado. buildMavicHQ lo hace de una vez.
 export function buildMavicHQ() {
+  const it = mavicSteps();
+  let r = it.next();
+  while (!r.done) r = it.next();
+  return r.value;
+}
+export async function buildMavicHQAsync(pause) {
+  const it = mavicSteps();
+  let r = it.next();
+  while (!r.done) { await pause(); r = it.next(); }
+  return r.value;
+}
+
+function* mavicSteps() {
   const M = materials();
   const base = buildMavic();
+  yield;
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
@@ -701,6 +717,7 @@ export function buildMavicHQ() {
     const e = mesh(glass, eyeMat, body); e.position.set(sx * 0.2, 0.335, 0.892);
   }
 
+  yield;
   // ---- Brazos: delanteros bajos, traseros altos y largos ----
   const armSec = (u) => ({ w: 0.13 - 0.02 * u, h: 0.095 - 0.012 * u, n: 3.4 });
   const arms = [
@@ -710,7 +727,8 @@ export function buildMavicHQ() {
     { root: V3(-0.26, 0.2, -0.86), hub: V3(-1.15, 0.04, -2.5), front: false, sx: -1, dir: 1 },
   ];
   const propCtl = [];
-  arms.forEach((a, i) => {
+  for (const [i, a] of arms.entries()) {
+    if (i === 2) yield;
     const mid = a.root.clone().lerp(a.hub, 0.18).add(V3(a.sx * 0.06, a.front ? 0.0 : -0.02, 0));
     // el brazo arranca dentro del cuerpo y se ensancha al salir (sin aristas de unión)
     const inside = a.root.clone().add(a.root.clone().sub(mid).setY(0).normalize().multiplyScalar(0.09));
@@ -731,7 +749,8 @@ export function buildMavicHQ() {
       g.add(pr.group);
       propCtl.push(pr);
     }
-  });
+  }
+  yield;
 
   // ---- Cámara ----
   const cam = buildCamera(M, base);

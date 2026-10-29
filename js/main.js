@@ -620,6 +620,14 @@ function lazy(el, margin, fn) {
   io.observe(el);
 }
 
+// Los módulos del 3D (Three.js con sus efectos y el modelo) se descargan y evalúan en un momento
+// libre tras la carga, no al llegar a la sección: así no se suman a su preparación
+if ($('[data-optic]')) {
+  const prefetch = () => import('./optic.js').catch(() => {});
+  if ('requestIdleCallback' in window) addEventListener('load', () => requestIdleCallback(prefetch, { timeout: 4000 }), { once: true });
+  else addEventListener('load', () => setTimeout(prefetch, 2000), { once: true });
+}
+
 lazy($('[data-optic]'), '250% 0px', async () => {
   try {
     const { initOptic } = await import('./optic.js');

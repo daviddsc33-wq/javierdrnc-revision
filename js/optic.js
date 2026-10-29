@@ -9,7 +9,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildMavicHQ } from './mavic-hq.js';
+import { buildMavicHQAsync } from './mavic-hq.js';
 import { studioEnvHQ, upgradeMaterials } from './render-hq.js';
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -19,15 +19,9 @@ const STOPS = [11, 8, 5.6, 4, 2.8, 2];
 
 // Cede el hilo principal un fotograma: la preparación se reparte en trozos cortos
 // para que el scroll no se quede pillado mientras se monta la escena
-const DEBUG = location.search.includes('debug');
-const debugPx = new Uint8Array(4);
 const breathe = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-// Modo ?debug: tiempo de cada tramo de la preparación sin ceder el hilo
-let stepT = 0;
-const step = (name) => { if (!DEBUG) return; const n = performance.now(); if (stepT) (window.__opticInit ||= []).push([name, Math.round(n - stepT)]); stepT = n; };
 
 export async function initOptic(section, { reduced = false } = {}) {
-  step('start');
   const canvas = section.querySelector('[data-optic-canvas]');
   const pin = section.querySelector('[data-optic-pin]');
   const ui = {
@@ -66,9 +60,11 @@ export async function initOptic(section, { reduced = false } = {}) {
   renderer.toneMappingExposure = 1.25;
   renderer.setClearColor(0x000000, 1);
 
+  await breathe();
+
   const scene = new THREE.Scene();
   scene.environment = studioEnvHQ(renderer);
-  step('chunk'); await breathe(); stepT = performance.now();
+  await breathe();
 
   const camera = new THREE.PerspectiveCamera(28, 1, 0.01, 100);
   const key = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -78,9 +74,9 @@ export async function initOptic(section, { reduced = false } = {}) {
   scene.add(key, rim);
 
   // Mavic 4 Pro dibujado a partir de las fotos del dron de Javi
-  const drone = buildMavicHQ();
+  const drone = await buildMavicHQAsync(breathe);
   upgradeMaterials(drone.root);
-  step('chunk'); await breathe(); stepT = performance.now();
+  await breathe();
   scene.add(drone.root);
   // Sombras propias suaves (brazos, orejas y cámara sobre el cuerpo); solo escritorio.
   // La óptica no recibe sombras: en el macro saldrían pixeladas.
@@ -333,12 +329,7 @@ export async function initOptic(section, { reduced = false } = {}) {
     progress += (target - progress) * (reduced ? 1 : 0.14);
     const moving = Math.abs(progress - prev) > 1e-5 || progress > 0.84;
     if (moving || needsRender) {
-      if (DEBUG) {
-        const a = performance.now();
-        render(dt);
-        renderer.getContext().readPixels(0, 0, 1, 1, 6408, 5121, debugPx);
-        (window.__opticWork ||= []).push([progress, performance.now() - a]);
-      } else render(dt);
+      render(dt);
       needsRender = false;
       // Los primeros fotogramas tras entrar en pantalla son siempre más lentos: no cuentan.
       // Se compara cada intervalo con el más corto de la tanda: si todos van a 33 ms es un tope del
@@ -392,7 +383,37 @@ export async function initOptic(section, { reduced = false } = {}) {
   // a la GPU a mitad del scroll (fuselaje, sombras, resplandor, desenfoque, oclusión)
   for (const c of airframe) c.visible = true;
   frameCamera(target);
-  try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); } catch {}
+  try {
+    if (renderer.compileAsync) {
+      // Se compila contra el búfer intermedio del posproceso, que es donde se dibuja de verdad
+      // (sin él saldría la variante con tono de pantalla y habría que recompilar de golpe)
+      renderer.setRenderTarget(composer.readBuffer);
+      // Por lotes de materiales: al terminar, el enlace de cada lote de programas cuesta unos
+      // milisegundos; todos de una vez serían una tarea de ~80 ms en mitad del scroll
+      const byMat = new Map();
+      drone.root.traverse((o) => { if (o.isMesh && !byMat.has(o.material)) byMat.set(o.material, o); });
+      const meshes = [...byMat.values()];
+      for (let i = 0; i < meshes.length; i += 6) {
+        await Promise.all(meshes.slice(i, i + 6).map((m) => renderer.compileAsync(m, camera, scene)));
+        await breathe();
+      }
+      // Los materiales de los efectos (oclusión, desenfoque, resplandor, salida) se compilan también
+      // en paralelo: si no, se compilan de golpe en su primer fotograma
+      const fx = new THREE.Scene();
+      const quad = new THREE.PlaneGeometry(1, 1);
+      const seen = new Set();
+      const collect = (v) => {
+        if (!v || seen.has(v)) return;
+        if (v.isMaterial) { seen.add(v); const m = new THREE.Mesh(quad, v); m.frustumCulled = false; fx.add(m); }
+        else if (Array.isArray(v)) v.forEach(collect);
+      };
+      for (const pass of composer.passes) for (const k of Object.keys(pass)) collect(pass[k]);
+      await renderer.compileAsync(fx, camera);
+      quad.dispose();
+    }
+  } catch {}
+  renderer.setRenderTarget(null);
+
   // Láminas del diafragma de f/11 a f/2.0: todas las formas hechas y subidas a la GPU antes de
   // que empiece el scroll (un render a 1×1 píxel basta para subir la geometría)
   const tiny = new THREE.WebGLRenderTarget(1, 1);
@@ -401,24 +422,25 @@ export async function initOptic(section, { reduced = false } = {}) {
     drone.lenses.main.setAperture(11 * Math.pow(2 / 11, i / 48));
     renderer.setRenderTarget(tiny);
     renderer.render(scene, camera);
-    if (i % 3 === 2) step('chunk'); await breathe(); stepT = performance.now();
+    if (i % 3 === 2) await breathe();
   }
   renderer.setRenderTarget(null);
   tiny.dispose();
   drone.lenses.main.setAperture(11);
-  step('chunk'); await breathe(); stepT = performance.now();
+  await breathe();
+
   const stages = [[], [bloom], coarse ? [] : [bokeh], coarse ? [] : [gtao]];
   for (const p of [gtao, bokeh, bloom]) p.enabled = false;
+  composer.setSize(64, 64);   // estreno a tamaño mínimo: compila y enlaza sin reservar búferes grandes
   for (const on of stages) {
     for (const p of on) p.enabled = true;
     renderer.shadowMap.needsUpdate = true;
     composer.render(0);
-    step('chunk'); await breathe(); stepT = performance.now();
+    await breathe();
   }
-  step('last');
+  resize();
   ready = true;
   lastPose = '';
   render(0);
-  if (DEBUG) window.__optic = { renderer, composer, gtao, bokeh, key, setPR: (r) => { pixelRatio = prCap = r; resize(); } };
   return { renderer };
 }

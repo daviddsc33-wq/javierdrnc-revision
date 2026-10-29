@@ -510,6 +510,9 @@ em.serif { font-style: normal; color: var(--em); }
 .readout__scale i.is-on { color: var(--optic); }
 
 .optic__labels { position: absolute; inset: 0; pointer-events: none; }
+/* Textos sobre el 3D en su propia capa: su opacidad, desenfoque y posición cambian en cada
+   fotograma y, sin capa, se volverían a pintar enteros (con sus sombras grandes) a resolución retina */
+.optic__copy, .optic__readout, .olabel { will-change: transform, opacity, filter; }
 .olabel {
   position: absolute; left: 0; top: 0;
   display: flex; align-items: center; gap: 10px;
