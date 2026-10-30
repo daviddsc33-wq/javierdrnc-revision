@@ -65,7 +65,7 @@ vec3 gPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir) {
 }
 `;
 
-function grainy(mat, { freq = 520, amp = 0.00032, smudge = 2.2 } = {}) {
+export function grainy(mat, { freq = 520, amp = 0.00032, smudge = 2.2 } = {}) {
   // Tres escalas que se relevan con la distancia, como en una foto:
   //  · cerca: grano fino en relieve (acabado granulado)
   //  · media: "piel de naranja" más ancha, que sigue viéndose cuando el grano ya no
@@ -110,7 +110,7 @@ function grainy(mat, { freq = 520, amp = 0.00032, smudge = 2.2 } = {}) {
 
 // Cristal: solo refleja el entorno (las cajas de luz). Sin brillo de las luces directas,
 // que en un cristal tan pulido salía como un punto diminuto que el bloom convertía en recuadro.
-function envOnlySpecular(mat) {
+export function envOnlySpecular(mat) {
   mat.onBeforeCompile = (sh) => {
     sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
       reflectedLight.directSpecular = vec3(0.0);
@@ -119,6 +119,64 @@ function envOnlySpecular(mat) {
       #endif`);
   };
   mat.customProgramCacheKey = () => 'env-only-specular';
+  return mat;
+}
+
+// Carcasa de cámara: magnesio con micro-textura y, en las zonas que marca `mask` (expresión GLSL
+// sobre vObjPos, 0–1), piel granulada: más mate, algo más oscura y con relieve de poro. Una sola
+// superficie sin piezas superpuestas (una piel pegada encima dejaba aristas y huecos).
+export function cameraSkin(mat, mask) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uGrainFreq = { value: 1100 };
+    sh.uniforms.uGrainAmp = { value: 0.0001 };
+    sh.uniforms.uSmudgeFreq = { value: 3 };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\n' + GRAIN_GLSL + `\nfloat leatherMask() { vec3 p = vObjPos; return clamp(${mask}, 0.0, 1.0); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        { float lm = leatherMask(); diffuseColor.rgb *= mix(1.0, 0.72, lm) * (0.97 + 0.06 * gNoise(vObjPos * 9.0)); }`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        { float lm = leatherMask(); roughnessFactor = mix(roughnessFactor * (0.9 + 0.2 * gNoise(vObjPos * 3.0)), 0.86, lm); }`)
+      .replace('#include <clearcoat_normal_fragment_begin>', `#include <clearcoat_normal_fragment_begin>`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          float lm = leatherMask();
+          vec3 gp = vObjPos * mix(1100.0, 2600.0, lm);
+          float fade = clamp(1.4 - length(fwidth(gp)) * 0.9, 0.0, 1.0);
+          float h = (gNoise(gp) * 0.6 + gNoise(gp * 2.1) * 0.4);
+          h = mix(h * 0.0001, (1.0 - abs(h * 2.0 - 1.0)) * 0.0012, lm) * fade;   // poro de la piel: crestas
+          normal = gPerturb(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection);
+        }`);
+  };
+  mat.customProgramCacheKey = () => 'camskin-' + mask;
+  return mat;
+}
+
+// Pieza impresa en TPU: capas de impresión en relieve (líneas horizontales finas en el eje Y
+// del objeto) y algo de brillo irregular. Se atenúan a distancia para no hacer moiré.
+export function layerLines(mat, { pitch = 0.004, amp = 0.0006 } = {}) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uGrainFreq = { value: 1 };
+    sh.uniforms.uGrainAmp = { value: amp };
+    sh.uniforms.uSmudgeFreq = { value: 1 / pitch };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\n' + GRAIN_GLSL)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        roughnessFactor *= 0.9 + 0.2 * gNoise(vObjPos * 30.0);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          float ph = vObjPos.y * uSmudgeFreq * 6.2831853;
+          float fade = clamp(1.6 - length(fwidth(vec2(ph))) * 0.5, 0.0, 1.0);
+          float h = (abs(sin(ph)) - 0.6) * uGrainAmp * fade;
+          normal = gPerturb(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection);
+        }`);
+  };
+  mat.customProgramCacheKey = () => `layers-${pitch}-${amp}`;
   return mat;
 }
 

@@ -161,7 +161,6 @@ em.serif { font-style: normal; color: var(--em); }
 
 /* Cabecera: Clash Display semi */
 .nav__links a, .cta__label { font-family: var(--font-title); font-weight: 600; }
-}
 
 /* ---------- Botones y chips ---------- */
 
@@ -468,15 +467,22 @@ em.serif { font-style: normal; color: var(--em); }
 .optic__copy--a { top: 50%; translate: 0 -50%; }
 .optic__copy--b {
   left: auto; right: var(--gutter); transform: none;
-  bottom: clamp(28px, 6vh, 56px); width: min(440px, 40vw);
+  bottom: clamp(96px, 12vh, 120px); width: min(330px, 30vw);   /* por encima del botón flotante de llamada */
   text-align: left; opacity: 0;
-  padding: 18px 22px; border-radius: 20px;
-  background: rgba(0, 0, 0, 0.58);
+  padding: 16px 18px 17px; border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .optic__copy--b .optic__big { margin: 0; font-size: clamp(1.125rem, 1.6vw, 1.5rem); }
+/* Nota de la apertura: texto de lectura, pequeño y fino, con los valores en mono y amarillo de apertura */
+.optic__note {
+  margin: 0; font-family: var(--sans); font-size: 14px; font-weight: 400;
+  line-height: 1.6; letter-spacing: 0.005em; color: rgba(245, 245, 247, 0.74);
+  text-wrap: pretty;
+}
+.optic__val { font-family: var(--mono); font-size: 0.92em; letter-spacing: -0.01em; color: var(--optic); white-space: nowrap; }
 .optic__copy--c { top: clamp(96px, 14vh, 150px); opacity: 0; }
 .optic__title {
   font-size: clamp(2.75rem, 7vw, 6rem);
@@ -1058,8 +1064,8 @@ em.serif { font-style: normal; color: var(--em); }
 
   .optic { height: 480vh; }
   .optic__readout { width: auto; right: var(--gutter); bottom: 20px; padding: 12px 14px; }
-  .optic__copy--b { left: var(--gutter); right: var(--gutter); width: auto; top: 84px; bottom: auto; text-align: center; }
-  .optic__copy--b .optic__big { font-size: 1.0625rem; }
+  .optic__copy--b { left: 50%; right: auto; translate: -50% 0; width: min(300px, calc(100% - var(--gutter) * 2)); top: 84px; bottom: auto; text-align: center; padding: 12px 16px 13px; }
+  .optic__copy--b .optic__note { font-size: 13px; line-height: 1.55; }
   .optic__big { font-size: 1.125rem; }
   .olabel__line { width: 22px; }
   .olabel__more { display: none; }

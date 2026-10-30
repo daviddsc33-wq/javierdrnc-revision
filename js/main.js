@@ -600,8 +600,10 @@ function initNav() {
     links.forEach((a) => {
       const sec = $(a.getAttribute('href'));
       if (!sec) return;
+      // «Flota» abarca el 3D del dron y la flota (data-until): sigue activo en las dos secciones
+      const until = a.dataset.until ? $(a.dataset.until) : null;
       ScrollTrigger.create({
-        trigger: sec, start: 'top 50%', end: 'bottom 50%',
+        trigger: sec, start: 'top 50%', end: 'bottom 50%', endTrigger: until || sec,
         onToggle: (self) => a.classList.toggle('is-active', self.isActive),
       });
     });
@@ -646,7 +648,7 @@ lazy($('.tile--gimbal'), '-20% 0px', () => $('.tile--gimbal').classList.add('is-
 lazy($('#flota'), '100% 0px', async () => {
   try {
     const { initFleet } = await import('./fleet.js');
-    initFleet($$('[data-craft]'), { reduced });
+    await initFleet($$('[data-craft]'), { reduced });
   } catch (err) {
     console.error(err);
   }

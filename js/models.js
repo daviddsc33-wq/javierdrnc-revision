@@ -459,7 +459,7 @@ function buildBlade(len, chord, { pitch = 0.42, sweep = 0.08 } = {}) {
   return g;
 }
 
-function buildProp({ radius, blades = 2, chord = 0.14, smoke = false, dir = 1 }) {
+export function buildProp({ radius, blades = 2, chord = 0.14, smoke = false, dir = 1, smokeOpacity = 0.78 }) {
   const M = materials();
   const g = new THREE.Group();
   const bladeGeo = buildBlade(radius, chord);
@@ -488,7 +488,7 @@ function buildProp({ radius, blades = 2, chord = 0.14, smoke = false, dir = 1 })
       solid.visible = blur < 0.98;
       solid.children.forEach((c) => {
         c.material.transparent = true;
-        c.material.opacity = smoke ? 0.78 * (1 - blur) : 1 - blur * 0.9;
+        c.material.opacity = smoke ? smokeOpacity * (1 - blur) : 1 - blur * 0.9;
       });
     },
   };

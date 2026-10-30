@@ -17,7 +17,7 @@ const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 /* ================= Utilidades ================= */
 
 // Catmull-Rom 1D sobre puntos de control equiespaciados en [0, 1]
-function curve1D(pts) {
+export function curve1D(pts) {
   const n = pts.length - 1;
   return (u) => {
     const f = Math.min(n - 1e-6, Math.max(0, u * n));
@@ -29,14 +29,14 @@ function curve1D(pts) {
 }
 
 // Superelipse: anchura w, alto superior ht, inferior hb, cuadratura n
-function superPoint(t, w, ht, hb, n) {
+export function superPoint(t, w, ht, hb, n) {
   const c = Math.cos(t), s = Math.sin(t);
   const e = 2 / n;
   return [(w / 2) * Math.sign(c) * Math.abs(c) ** e, (s >= 0 ? ht : hb) * Math.sign(s) * Math.abs(s) ** e];
 }
 
 // Malla cerrada a partir de anillos con el mismo número de puntos
-function ringsGeometry(rings, closeStart = true, closeEnd = true) {
+export function ringsGeometry(rings, closeStart = true, closeEnd = true) {
   const seg = rings[0].length;
   const pos = [], idx = [];
   rings.forEach((r) => r.forEach((p) => pos.push(p.x, p.y, p.z)));
@@ -66,7 +66,7 @@ function ringsGeometry(rings, closeStart = true, closeEnd = true) {
 }
 
 // Garantiza caras hacia fuera (volumen con signo positivo); si no, invierte el orden
-function outward(g) {
+export function outward(g) {
   const p = g.attributes.position, idx = g.index.array;
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
   let vol = 0;
@@ -83,7 +83,7 @@ function outward(g) {
 }
 
 // Barrido de una sección superelíptica (w × h, cuadratura n) a lo largo de una curva
-function sweep(curve, steps, secFn, seg = 32) {
+export function sweep(curve, steps, secFn, seg = 32) {
   const rings = [];
   for (let i = 0; i <= steps; i++) {
     const u = i / steps;
@@ -103,7 +103,7 @@ function sweep(curve, steps, secFn, seg = 32) {
   return ringsGeometry(rings);
 }
 
-const line = (...pts) => new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+export const line = (...pts) => new THREE.CatmullRomCurve3(pts, false, 'centripetal');
 
 function mesh(geo, mat, parent) {
   const m = new THREE.Mesh(geo, mat);
@@ -376,7 +376,7 @@ function buildIrisHQ(maxRadius, count = 9) {
   return { group, set };
 }
 
-function buildLensHQ(M, { r = 0.132, d = 0.2 } = {}) {
+export function buildLensHQ(M, { r = 0.132, d = 0.2 } = {}) {
   const g = new THREE.Group();
   const latheZ = (pts, seg = 160) => { const geo = new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), seg); geo.rotateX(Math.PI / 2); return geo; };
 

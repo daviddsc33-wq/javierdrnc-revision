@@ -200,7 +200,12 @@ export async function initOptic(section, { reduced = false } = {}) {
     const kf = aspect < 1 ? Math.sqrt(k) * 1.12 : 1;   // en vertical, el dron llena el ancho
     const lift = droneSize.x * 0.085;
     tmpA.copy(droneCenter).add(v.set(0, lift, 0));
-    tmpB.copy(tmpA).addScaledVector(FINAL_DIR, Math.max(droneSize.x, droneSize.z) * 1.5 * kf);
+    // Distancia mínima para que el dron entero (con hélices y su balanceo) quepa en el ángulo
+    // horizontal real: el factor fijo dejaba un brazo fuera por la izquierda (en móvil y en escritorio)
+    const vf = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const hf = Math.atan(Math.tan(vf) * aspect);
+    const fit = (Math.hypot(droneSize.x, droneSize.z) / 2) * (aspect < 1 ? 1.08 : 1.0) / Math.sin(hf);
+    tmpB.copy(tmpA).addScaledVector(FINAL_DIR, Math.max(Math.max(droneSize.x, droneSize.z) * 1.5 * kf, fit));
     pos.lerp(tmpB, t4);
     look.lerp(tmpA, t4);
 
