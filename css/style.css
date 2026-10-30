@@ -249,15 +249,13 @@ em.serif { font-style: normal; color: var(--em); }
 .cta__label {
   font-size: 14px; letter-spacing: -0.01em;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
-  opacity: 0.86; transition: opacity var(--t-hover) ease;
 }
 .cta__short { display: none; }
-/* Con ratón, el texto del CTA solo aparece al pasar por encima (o al enfocarlo con teclado).
-   En táctil se queda visible: no hay hover. */
-@media (hover: hover) and (pointer: fine) {
-  .cta__label { opacity: 0; transform: translateX(6px); transition: opacity 0.22s var(--ease-ui), transform 0.22s var(--ease-ui); }
-  .cta:focus-visible .cta__label { opacity: 1; transform: none; }
-}
+/* El texto del CTA está oculto: con ratón aparece al pasar por encima (o al enfocarlo con teclado);
+   en táctil aparece con el primer toque (.is-revealed) y el segundo lleva al formulario. */
+.cta__label { opacity: 0; transform: translateX(6px); transition: opacity 0.22s var(--ease-ui), transform 0.22s var(--ease-ui); }
+.cta:focus-visible .cta__label, .cta.is-revealed .cta__label { opacity: 1; transform: none; }
+.cta.is-revealed .cta__mark { transform: rotate(135deg); }
 
 /* ---------- HERO ---------- */
 
@@ -1075,6 +1073,11 @@ em.serif { font-style: normal; color: var(--em); }
 
   .photo__head { grid-template-columns: 1fr; }
   .photo__head .lede { justify-self: start; }
+  /* Móvil: fotos algo más bajas para que el pie (título y datos de toma) quepa en pantalla */
+  .shot--tall { height: min(42svh, 420px); width: calc(min(42svh, 420px) * 2 / 3); }
+  .shot--wide { height: min(28svh, 280px); width: calc(min(28svh, 280px) * 16 / 9); }
+  .shot--low { margin-top: 7svh; }
+  .shot figcaption { flex-direction: column; gap: 3px; margin-top: 10px; }
 
   .brands__head { grid-template-columns: 1fr; }
   .brands__head .lede { justify-self: start; }

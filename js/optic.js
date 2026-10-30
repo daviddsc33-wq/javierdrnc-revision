@@ -198,14 +198,16 @@ export async function initOptic(section, { reduced = false } = {}) {
     // Fase 4: revelado del dron completo en tres cuartos, con aire para el titular de arriba.
     const t4 = ss(0.8, 0.98, p);
     const kf = aspect < 1 ? Math.sqrt(k) * 1.12 : 1;   // en vertical, el dron llena el ancho
-    const lift = droneSize.x * 0.085;
+    const lift = droneSize.x * (aspect < 1 ? 0.15 : 0.085);   // en vertical, más abajo: aire para el titular y menos negro debajo
     tmpA.copy(droneCenter).add(v.set(0, lift, 0));
     // Distancia mínima para que el dron entero (con hélices y su balanceo) quepa en el ángulo
     // horizontal real: el factor fijo dejaba un brazo fuera por la izquierda (en móvil y en escritorio)
     const vf = THREE.MathUtils.degToRad(camera.fov) / 2;
     const hf = Math.atan(Math.tan(vf) * aspect);
-    const fit = (Math.hypot(droneSize.x, droneSize.z) / 2) * (aspect < 1 ? 1.08 : 1.0) / Math.sin(hf);
-    tmpB.copy(tmpA).addScaledVector(FINAL_DIR, Math.max(Math.max(droneSize.x, droneSize.z) * 1.5 * kf, fit));
+    const rXZ = Math.hypot(droneSize.x, droneSize.z) / 2;
+    // En vertical se prefiere el detalle: el cuerpo llena el ancho aunque se corten las puntas de las hélices
+    const dist = aspect < 1 ? rXZ * 0.5 / Math.sin(hf) : Math.max(Math.max(droneSize.x, droneSize.z) * 1.5 * kf, rXZ / Math.sin(hf));
+    tmpB.copy(tmpA).addScaledVector(FINAL_DIR, dist);
     pos.lerp(tmpB, t4);
     look.lerp(tmpA, t4);
 

@@ -927,11 +927,23 @@ function initForm() {
 const cta = $('[data-cta]');
 if (cta) {
   let t;
-  cta.addEventListener('click', () => {
+  // En táctil (sin «pasar por encima»): el primer toque muestra «Presupuesto», el segundo lleva al formulario
+  const touchUI = window.matchMedia('(hover: none)').matches;
+  let hideT;
+  cta.addEventListener('click', (e) => {
+    if (touchUI && !cta.classList.contains('is-revealed')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();   // que el scroll suave de los enlaces no baje aún al formulario
+      cta.classList.add('is-revealed');
+      clearTimeout(hideT);
+      hideT = setTimeout(() => cta.classList.remove('is-revealed'), 4000);
+      return;
+    }
+    cta.classList.remove('is-revealed');
     cta.classList.add('is-open');
     clearTimeout(t);
     t = setTimeout(() => cta.classList.remove('is-open'), 2400);
-  });
+  }, true);
 }
 
 // WhatsApp: al pulsar en el móvil, el aro y el "timbre" del icono se ven antes de abrir la app
