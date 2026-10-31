@@ -105,7 +105,7 @@
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@300,400&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="preload" as="image" fetchpriority="high" href="assets/video/showreel/showreel-poster.jpg">
-  <link rel="stylesheet" href="css/style.css?v=20261031h">
+  <link rel="stylesheet" href="css/style.css?v=20261101a">
 
   <script type="importmap">
   {
@@ -626,6 +626,25 @@
             <button class="btn btn--cream btn--lg" type="submit">Enviar propuesta</button>
             <p class="form__status" data-form-status role="status" aria-live="polite"></p>
           </div>
+          <!-- Error de envío: aviso con el diseño de la web; el correo solo se abre si el visitante lo elige -->
+          <div class="form__alert" data-form-alert role="alert" hidden>
+            <p class="form__alert-text">No se ha podido enviar ahora mismo. Tu propuesta sigue aquí escrita.</p>
+            <div class="form__alert-actions">
+              <button class="btn btn--cream btn--sm" type="submit">Reintentar</button>
+              <a class="form__alert-mail" data-form-mail href="mailto:javiercorralandres@gmail.com">o envíala por correo</a>
+            </div>
+          </div>
+          <!-- Envío correcto: sustituye al formulario -->
+          <div class="form__done" data-form-done tabindex="-1" hidden>
+            <svg class="form__done-mark" viewBox="0 0 32 32" aria-hidden="true">
+              <circle cx="16" cy="16" r="14.5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M16 4.5 L22.6 12.2 M27.5 16 L19.8 22.6 M16 27.5 L9.4 19.8 M4.5 16 L12.2 9.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="4.2" fill="currentColor"/>
+            </svg>
+            <h3 class="form__done-title">Propuesta <em class="serif">recibida</em>.</h3>
+            <p class="form__done-text" data-form-done-text>Te respondo por correo con una propuesta de planos, equipo y permisos.</p>
+            <button class="form__again" type="button" data-form-again>Enviar otra propuesta</button>
+          </div>
         </form>
       </div>
     </section>
@@ -821,7 +840,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <script type="module" src="js/main.js?v=20261031c"></script>
+  <script type="module" src="js/main.js?v=20261101a"></script>
   <!-- Panel de prueba de tipografías: QUITAR antes de publicar (y el try{} del <head>) -->
 </body>
 </html>

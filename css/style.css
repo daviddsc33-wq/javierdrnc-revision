@@ -773,6 +773,24 @@ em.serif { font-style: normal; color: var(--em); }
 .field.is-invalid > span { color: #ffb4a8; }
 .form__foot { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 6px; }
 .form__status { font-size: 14px; color: var(--smoke); }
+/* Aviso de error: filo de un píxel, sin colores de alarma; acciones a mano */
+.form__alert { display: grid; gap: 14px; padding: 16px 18px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--hair-strong); background: rgba(255, 255, 255, 0.03); animation: form-in 0.5s var(--ease-ui) both; }
+.form__alert[hidden], .form__done[hidden] { display: none; }
+.form__alert-text { font-size: 15px; color: var(--porcelain); }
+.form__alert-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.form__alert-mail { font-size: 14px; color: var(--smoke); border-bottom: 1px solid var(--hair-strong); padding-bottom: 2px; transition: color var(--t-hover) ease, border-color var(--t-hover) ease; }
+/* Envío correcto: la caja del formulario se queda con la confirmación */
+.form.is-sent > :not(.form__done) { display: none; }
+.form__done { display: grid; justify-items: start; align-content: center; gap: 14px; min-height: 360px; outline: none; animation: form-in 0.7s var(--ease-ui) both; }
+.form__done-mark { width: 44px; height: 44px; color: var(--cream); animation: form-mark 1.2s var(--ease-ui) both; }
+.form__done-title { font-family: var(--font-title); font-weight: 300; letter-spacing: -0.015em; font-size: clamp(2rem, 3.6vw, 2.75rem); line-height: 1.05; }
+.form__done-text { max-width: 38ch; font-size: 15px; line-height: 1.6; color: var(--smoke); }
+.form__again { margin-top: 8px; font-size: 14px; color: var(--smoke); border-bottom: 1px solid var(--hair-strong); padding-bottom: 2px; transition: color var(--t-hover) ease, border-color var(--t-hover) ease; }
+@keyframes form-in { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes form-mark { from { opacity: 0; transform: rotate(-135deg) scale(0.9); } to { opacity: 1; transform: none; } }
+@media (hover: hover) and (pointer: fine) {
+  .form__alert-mail:hover, .form__again:hover { color: var(--porcelain); border-color: var(--porcelain); }
+}
 .form__honey { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .form [type="submit"][aria-busy="true"] { opacity: 0.6; pointer-events: none; }
 

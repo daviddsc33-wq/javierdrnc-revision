@@ -864,6 +864,15 @@ const FORM_TO = 'javiercorralandres@gmail.com';
 function initForm() {
   const form = $('[data-form]');
   const status = $('[data-form-status]');
+  const alertBox = $('[data-form-alert]');
+  const mailLink = $('[data-form-mail]');
+  const done = $('[data-form-done]');
+  const doneText = $('[data-form-done-text]');
+  $('[data-form-again]').addEventListener('click', () => {
+    form.classList.remove('is-sent');
+    done.hidden = true;
+    $('[name="nombre"]', form).focus();
+  });
   const mail = $('[data-mail]')?.textContent.trim() || '';
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -913,13 +922,21 @@ function initForm() {
     })
       .then((r) => r.json().then((j) => { if (!r.ok || String(j.success) !== 'true') throw new Error(j.message); }))
       .then(() => {
+        // Confirmación con el diseño de la web, en la misma caja del formulario
+        alertBox.hidden = true;
+        status.textContent = '';
+        const nombre = String(d.get('nombre') || '').trim().split(/\s+/)[0];
+        doneText.textContent = `${nombre ? `Gracias, ${nombre}. ` : ''}Te respondo a ${d.get('email')} con una propuesta de planos, equipo y permisos.`;
         form.reset();
-        status.textContent = 'Recibido. Javi te contestará por correo lo antes posible.';
+        done.hidden = false;
+        form.classList.add('is-sent');
+        done.focus({ preventScroll: true });
       })
       .catch(() => {
-        // Si el servicio falla, no se pierde la consulta: se abre el correo con todo preparado
-        window.location.href = `mailto:${mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        status.textContent = 'No se pudo enviar desde la web; se ha abierto tu correo con la propuesta lista.';
+        // Error: aviso con el diseño de la web; el correo solo se abre si el visitante lo elige
+        status.textContent = '';
+        mailLink.href = `mailto:${mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        alertBox.hidden = false;
       })
       .finally(() => btn.removeAttribute('aria-busy'));
   });
