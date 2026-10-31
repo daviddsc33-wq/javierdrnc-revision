@@ -619,6 +619,7 @@ em.serif { font-style: normal; color: var(--em); }
 .craft__name { font-size: clamp(1.4rem, 2vw, 1.75rem); font-weight: 500; letter-spacing: -0.025em; }
 .craft__type { font-family: var(--sans); font-size: 13px; letter-spacing: 0.01em; color: var(--ash); }
 .craft__info p:not(.craft__type) { color: var(--ash); font-size: 15px; max-width: 46ch; }
+.fleet__note { display: block; margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--ash); }
 .fleet__all { margin-top: 24px; font-size: 14px; color: var(--ash); max-width: 72ch; text-wrap: pretty; }
 .craft__spec { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 28px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--hair); }
 .craft__spec dt { color: var(--ash); margin-bottom: 4px; }
@@ -783,6 +784,9 @@ em.serif { font-style: normal; color: var(--em); }
 .foot__brand p { color: var(--ash); max-width: 34ch; font-size: 15px; }
 .foot__links { display: grid; gap: 10px; font-size: 15px; color: var(--smoke); justify-items: start; }
 .foot__links a, .foot__legal a { transition: color var(--t-hover) ease; }
+/* Zona táctil de al menos 24 px de alto (WCAG 2.2) sin mover nada: un área invisible por encima del enlace */
+.foot__legal a, .foot__links a, .foot__contact, .contact__direct a { position: relative; }
+.foot__legal a::after, .foot__links a::after, .foot__contact::after, .contact__direct a::after { content: ""; position: absolute; inset: -6px -2px; }
 .foot__contact { display: inline-flex; align-items: center; gap: 11px; }
 .ico { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linejoin: round; stroke-linecap: round; opacity: 0.75; }
 
@@ -1078,7 +1082,10 @@ em.serif { font-style: normal; color: var(--em); }
   .shot--tall { height: min(42svh, 420px); width: calc(min(42svh, 420px) * 2 / 3); }
   .shot--wide { height: min(28svh, 280px); width: calc(min(28svh, 280px) * 16 / 9); }
   .shot--low { margin-top: 7svh; }
-  .shot figcaption { flex-direction: column; gap: 3px; margin-top: 10px; }
+  .shot figcaption { flex-direction: column; gap: 3px; margin-top: 10px; width: 100%; }
+  /* El pie no puede ser más ancho que su foto: título y datos de toma saltan de línea dentro de ella */
+  .shot figcaption > span { min-width: 0; overflow-wrap: break-word; }
+  .shot figcaption .mono { white-space: normal; font-size: 11px; line-height: 1.45; }
 
   .brands__head { grid-template-columns: 1fr; }
   .brands__head .lede { justify-self: start; }

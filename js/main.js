@@ -2,6 +2,10 @@
 
 import { sourceFor, clipSource, encodedSource as encodedReel, upgradePictures } from './media.js';
 
+// Se resuelve al arrancar la entrada de la portada (ver runIntro): da paso a la descarga del reel
+let startReel;
+const introStarted = new Promise((r) => { startReel = r; });
+
 const gsap = window.gsap;
 const ScrollTrigger = window.ScrollTrigger;
 const $ = (s, el = document) => el.querySelector(s);
@@ -216,6 +220,7 @@ function initReel() {
   for (let i = 0; i < 2; i++) {
     const v = document.createElement('video');
     v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.crossOrigin = 'anonymous';   // los vídeos se sirven desde R2 (otro origen): sin CORS el fundido de sonido (Web Audio) quedaría en silencio
     v.setAttribute('playsinline', '');
     v.setAttribute('aria-hidden', 'true');
     reelEl.appendChild(v);
@@ -225,8 +230,10 @@ function initReel() {
   const urls = [];
   const src = (i) => urls[i % urls.length];
   const single = hero.clips.length === 1;
-  Promise.all(hero.clips.map((c) => clipSource(c, window))).then((list) => {
-    urls.push(...list);
+  // El reel no empieza a descargarse hasta que arranca la entrada: en conexiones lentas sus MB
+  // competían con fuentes y scripts y el texto de portada tardaba en pintarse (se ve el póster)
+  Promise.all([...hero.clips.map((c) => clipSource(c, window)), introStarted]).then((list) => {
+    urls.push(...list.slice(0, hero.clips.length));
     hero.layers[0].src = src(0);
     if (single) hero.layers[0].loop = true;
     else hero.layers[1].src = src(1);
@@ -371,7 +378,7 @@ function intro() {
     .fromTo('.nav', { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2 }, 0.4);
 }
 let introDone = false;
-const runIntro = () => { if (!introDone) { introDone = true; intro(); } };
+const runIntro = () => { if (!introDone) { introDone = true; intro(); setTimeout(startReel, 150); } };
 document.fonts?.ready.then(() => setTimeout(runIntro, 120));
 setTimeout(runIntro, 1400);
 
@@ -748,6 +755,7 @@ function initLightbox() {
   let lastFocus = null;
   const img = document.createElement('img');
   img.decoding = 'async';
+  img.alt = '';   // se rellena con el texto alternativo de la foto al abrirla
   frame.appendChild(img);
 
   const show = (i) => {
