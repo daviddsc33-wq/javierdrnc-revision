@@ -1033,6 +1033,7 @@ em.serif { font-style: normal; color: var(--em); }
   .tile__stat { font-size: 2.25rem; }
   .tile--video, .tile--wide { grid-column: 1 / -1; }
   .tile--wide { flex-direction: column; align-items: stretch; }
+  .tile--wide .focals { flex: none; }   /* en columna, la base de 520 px del escritorio se volvía alto: dejaba un hueco negro */
   .tile--video { min-height: 380px; }
   .gimbal-dial { width: 64px; height: 64px; }
   .specs__panel { padding: 22px 14px 14px; border-radius: 28px; }
